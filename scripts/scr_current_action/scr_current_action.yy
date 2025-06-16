@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_current_action",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_current_action",
+  "parent":{
+    "name":"Tabel",
+    "path":"folders/Scripts/Tabel.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

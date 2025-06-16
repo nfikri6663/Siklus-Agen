@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_report_table",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_report_table",
+  "parent":{
+    "name":"Tabel",
+    "path":"folders/Scripts/Tabel.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

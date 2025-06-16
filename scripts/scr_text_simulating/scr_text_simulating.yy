@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_text_simulating",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_text_simulating",
+  "parent":{
+    "name":"Tabel",
+    "path":"folders/Scripts/Tabel.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
