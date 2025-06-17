@@ -25,7 +25,7 @@ function get_valid_actions(_time_to_check = time_of_day) {
         array_push(_valid_actions, ACTIONS.Istirahat);
     }
     // Aksi: Bekerja (Usia 13-60, Siang-Malam)
-    if (age >= 13 && age <= 60 && _time_to_check != "pagi") {
+    if (age >= 13 && age <= 60) {
         array_push(_valid_actions, ACTIONS.Bekerja);
     }
     // Aksi: Bersosialisasi (Usia >= 6, Siang-Malam)
@@ -40,13 +40,13 @@ function get_valid_actions(_time_to_check = time_of_day) {
     if (age >= 18 && age <= 60 && _time_to_check == "siang") {
         array_push(_valid_actions, ACTIONS.Liburan);
     }
-    // Aksi: Menikah (Usia 22-60, Siang)
-    if (age >= 22 && age <= 60 && _time_to_check == "siang") {
+    // Aksi: Menikah (Usia 25-60, Siang)
+    if (age >= 25 && age <= 60 && _time_to_check == "siang") {
         // Tambahkan cek lain jika perlu, misal: !is_married
         array_push(_valid_actions, ACTIONS.Menikah);
     }
-    // Aksi: Punya Anak (Usia 23-60, Kapanpun)
-    if (age >= 23 && age <= 60) {
+    // Aksi: Punya Anak (Usia 32-60, Kapanpun)
+    if (age >= 32 && age <= 60) {
         // Tambahkan cek lain jika perlu, misal: is_married
         array_push(_valid_actions, ACTIONS.Punya_Anak);
     }

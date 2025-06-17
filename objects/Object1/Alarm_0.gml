@@ -1,13 +1,12 @@
 //// Periksa di fase mana kita sekarang
 if (game_phase == "auto_learning") {
     run_ai_cycle()
-    if (step_training[step_num] >= _training_cycles) step_num ++
-    if (step_num > 4 && step_training[step_num] >= _training_cycles) {
-        game_phase = "manual_play";
-        current_day_log = [];
-        atribut()
+    if step_training[step_num] > (_training_cycles-1){
+        if step_num == array_length(step_training)-1{
+            alarm[1] = 1
+        }
+        if step_num < array_length(step_training)-1 step_num ++
     }
-    
     alarm[0] = 1;
     exit
 }
@@ -32,11 +31,7 @@ run_ai_cycle(false)
 time_of_day_cycle++;
 if (time_of_day_cycle >= array_length(time_of_day_map)) {
     time_of_day_cycle = 0;
-    days_passed++;
     if game_phase != "auto_learning" is_simulating = false;
 }
-
 time_of_day = time_of_day_map[time_of_day_cycle];
-if (days_passed > 0 && time_of_day_cycle == 0) age++;
-
-if (is_simulating) alarm[0] = room_speed;
+if (is_simulating) alarm[0] = 1;

@@ -1,18 +1,18 @@
 function scr_report_table(){
-    var _report_x = 620; // Sesuaikan posisi X awal jika perlu
+    var _report_x = 600;
     var _report_y = 10;
     // --- Definisi Geometri & Posisi Kolom Tabel ---
-    var _row_height = 38;
+    var _row_height = 64;
     _x_title    = _report_x;                      // Kolom Judul Aksi (Lebar: 240px)
-    _x_health   = _report_x + 190;                  // Kolom delta Health
-    _x_hungry   = _report_x + 250;                  // Kolom delta Hungry
-    _x_energy   = _report_x + 310;                  // Kolom delta Energy
-    _x_stress   = _report_x + 370;                  // Kolom delta Stress
-    _x_social   = _report_x + 430;                  // Kolom delta Social
-    _x_money    = _report_x + 490;                  // Kolom delta Money
-    _x_iq       = _report_x + 550;                  // Kolom delta IQ
-    _x_reward   = _report_x + 610;                  // Kolom Reward/Punish
-    _x_qvalue   = _report_x + 690;                  // Kolom Q-Value
+    _x_health   = _report_x + 210;                  // Kolom delta Health
+    _x_hungry   = _report_x + 270;                  // Kolom delta Hungry
+    _x_energy   = _report_x + 330;                  // Kolom delta Energy
+    _x_stress   = _report_x + 390;                  // Kolom delta Stress
+    _x_social   = _report_x + 450;                  // Kolom delta Social
+    _x_money    = _report_x + 510;                  // Kolom delta Money
+    _x_iq       = _report_x + 570;                  // Kolom delta IQ
+    _x_reward   = _report_x + 630;                  // Kolom Reward/Punish
+    _x_qvalue   = _report_x + 710;                  // Kolom Q-Value
     _table_end_x = _x_qvalue + 50;
     draw_set_color(c_white);
     draw_set_halign(fa_center);
@@ -22,7 +22,7 @@ function scr_report_table(){
     draw_set_valign(fa_middle); // Set perataan vertikal ke tengah untuk semua teks
     // --- Menggambar Header Tabel (2 Tingkat) ---
     var _header_y = _report_y;
-    draw_text(_x_title + 190/2, _header_y, "Kejadian");
+    draw_text(_x_title + 210/2, _header_y, "Kejadian");
     draw_text((_x_health + _x_iq)/2, _header_y, "Perubahan Stat");
     draw_text(_x_reward, _header_y, "Reward/\nPunish");
     draw_text(_x_qvalue, _header_y, "Q-Value");
@@ -48,7 +48,7 @@ function scr_report_table(){
         res = result
         draw_set_halign(fa_left);
         draw_set_color(title_color);
-        draw_text_ext(_x_title, _yy, title_text, 16, 210);
+        draw_text_ext(_x_title, _yy, title_text, 18, 210);
         
         if (!is_struct(res)) return; // Penjaga jika data tidak valid
         // Helper kecil untuk gambar delta
@@ -103,7 +103,12 @@ function scr_report_table(){
         var _nama_aksi = variable_struct_exists(_entry, "action_name") ? _entry.action_name : "N/A";
         var _hasil_aksi = variable_struct_exists(_entry, "action_result") ? _entry.action_result : 0;
         var _learning_details = variable_struct_exists(_entry, "learning_details") ? _entry.learning_details : 0;
-        var _q_diambil = is_struct(_learning_details) ? _learning_details.past_q : 0;
+        var _q_diambil = is_struct(_learning_details) ? _learning_details.present_q : 0;
+        var _alasan_aksi = is_struct(_hasil_aksi) ? _hasil_aksi.reason : "-";
+        var _nama_lengkap_aksi = _nama_aksi;
+        if (_alasan_aksi != "Aksi Berhasil" && _alasan_aksi != "-") {
+            _nama_lengkap_aksi += "\n(" + _alasan_aksi + ")";
+        }
         
         var _rekomendasi_struct = variable_struct_exists(_entry, "recommendation") ? _entry.recommendation : 0;
         var _nama_rekomendasi = is_struct(_rekomendasi_struct) ? _rekomendasi_struct.name : "N/A";
@@ -113,10 +118,10 @@ function scr_report_table(){
         var _nama_lengkap_rekomendasi = _nama_rekomendasi + "\n(" + _alasan_rekomendasi + ")";
         
         // --- Panggil fungsi gambar untuk setiap baris ---
-        _draw_report_row(_report_y, "Aksi: " + _nama_aksi, _hasil_aksi, _q_diambil, c_white);
+        _draw_report_row(_report_y, "Aksi: " + _nama_lengkap_aksi, _hasil_aksi, _q_diambil, c_white);
         _draw_report_row(_report_y + _row_height, "Rekomendasi: " + _nama_lengkap_rekomendasi, _hasil_rekomendasi, _q_rekomendasi, c_aqua);
         
-        _report_y += _row_height * 2 + 8;
+        _report_y += _row_height*2 + 8;
         draw_line(_report_x, _report_y, _table_end_x, _report_y);
         _report_y += 8;
     }

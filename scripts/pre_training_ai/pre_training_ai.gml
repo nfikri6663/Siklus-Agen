@@ -29,7 +29,7 @@ function generate_all_states() {
     _training_cycles = array_length(all_possible_states);
     game_phase = "auto_learning"
     step_num = 0
-    step_training = [0,0,0,0]
+    step_training = [0]
 }
 
 function konversi_state_ke_struct(state_string) {
@@ -87,11 +87,8 @@ function konversi_state_ke_struct(state_string) {
 }
 
 function run_ai_cycle(training = true) {
-    show_debug_message($"NUM: {step_num}, STEP: {step_training[step_num]}/{_training_cycles}")
-    
     if training{
         current_state_key = all_possible_states[step_training[step_num]];
-    
         var numerik = konversi_state_ke_struct(current_state_key);
         age = numerik.age
         health = numerik.health
@@ -99,6 +96,7 @@ function run_ai_cycle(training = true) {
         energy = numerik.energy
         money = numerik.money
         time_of_day = time_of_day_map[numerik.time_of_day_cycle]
+        if array_length(current_day_log) > 2 current_day_log = []
     }else current_state_key = get_state_string();
     
     available_actions_list = get_valid_actions();
@@ -129,6 +127,7 @@ function run_ai_cycle(training = true) {
         var _learning_details = update_q_table(current_state_key, _chosen_action, last_reward, _next_state_key);
         // Buat dan simpan log UNTUK AKSI INI
         var _log_entry = {
+            action_result: last_action_result,
             state_key_at_the_time: current_state_key,
             time_of_day: time_of_day,
             action_name: current_action_name,

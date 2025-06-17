@@ -49,7 +49,6 @@
     {"id":{"name":"scr_q_table","path":"scripts/scr_q_table/scr_q_table.yy",},},
     {"id":{"name":"scr_report_table","path":"scripts/scr_report_table/scr_report_table.yy",},},
     {"id":{"name":"scr_status_agent","path":"scripts/scr_status_agent/scr_status_agent.yy",},},
-    {"id":{"name":"scr_text_simulating","path":"scripts/scr_text_simulating/scr_text_simulating.yy",},},
     {"id":{"name":"update_q_table","path":"scripts/update_q_table/update_q_table.yy",},},
   ],
   "resourceType":"GMProject",

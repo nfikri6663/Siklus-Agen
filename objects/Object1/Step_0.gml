@@ -1,7 +1,10 @@
 if keyboard_check_pressed(vk_space){
     if (game_phase == "manual_play" && !is_simulating) {
         is_simulating = true;
+        days_passed++;
+        age++
         current_day_log = [];
+        alarm[0] = 1
     }
 }
 
