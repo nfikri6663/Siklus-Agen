@@ -1,12 +1,12 @@
 {
   "$GMScript":"v1",
-  "%Name":"get_valid_actions",
+  "%Name":"script_tambahan",
   "isCompatibility":false,
   "isDnD":false,
-  "name":"get_valid_actions",
+  "name":"script_tambahan",
   "parent":{
-    "name":"Q_Learning",
-    "path":"folders/Scripts/Q_Learning.yy",
+    "name":"Scripts",
+    "path":"folders/Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

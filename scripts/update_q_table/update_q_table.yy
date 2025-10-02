@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"update_q_table",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Q_Learning",
+    "path":"folders/Scripts/Q_Learning.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

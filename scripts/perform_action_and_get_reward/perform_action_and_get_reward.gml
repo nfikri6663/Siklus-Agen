@@ -1,207 +1,288 @@
-function perform_action_and_get_reward(_action, _dry_run = false) {
+function perform_action_and_get_reward(_action, _dry_run = false){
     var _result = {
-        reward: -1, 
+        reward: 0,
         reason: "Aksi Berhasil",
         delta_iq: 0, delta_money: 0, delta_health: 0, delta_hungry: 0,
         delta_social: 0, delta_stress: 0, delta_energy: 0
-    };
-
+    }
+    
     // --- Bonus Kebutuhan (Urgency Bonus) ---
-    // Dihitung di setiap siklus untuk menilai prioritas agen.
-    var _urgency_health = (s_health_cat == "rendah") ? 70 : ((s_health_cat == "sedang") ? 35 : 0);
-    var _urgency_energy = (s_energy_cat = "rendah") ? 60 : ((s_energy_cat = "sedang") ? 30 : 0);
-    var _urgency_hungry = (s_hungry_cat = "SangatLapar") ? 50 : ((s_hungry_cat = "lapar") ? 25 : 0);
-    var _urgency_stress = (stress > 80) ? 50 : ((stress > 60) ? 25 : 0);
-    var _urgency_money =  (s_money_cat  = "miskin") ? 40 : ((s_money_cat  = "cukup") ? 20 : 0);
-    var _urgency_social = (social < 30) ? 30 : ((social < 50) ? 15 : 0);
-    // "Urgency" IQ adalah bonus kesempatan, bukan kebutuhan kritis.
-    var _urgency_iq = (stress < 40 && energy > 50 && hungry < 50 && age >= 6 && age <= 22) ? 25 : 0;
+    // Bonus ini mendorong AI untuk mengatasi kebutuhannya yang paling mendesak
+    var _urgency_health = s_health_cat == "rendah" ? 200 : (s_health_cat == "sedang" ? 50 : 0)
+    var _urgency_energy = s_energy_cat == "rendah" ? 50 : (s_energy_cat == "sedang" ? 25 : 0)
+    var _urgency_hungry = s_hungry_cat == "SangatLapar" ? 70 : (s_hungry_cat == "lapar" ? 35 : 0)
+    var _urgency_stress = stress > 80 ? 50 : (stress > 60 ? 25 : 0)
+    var _urgency_money =  s_money_cat == "miskin" ? 200 : (s_money_cat == "cukup" ? 80 : 20)
+    var _urgency_social = social < 30 ? 40 : (social < 50 ? 20 : 0)
+    var _urgency_iq = stress < 40 && energy > 60 && age >= 6 && age <= 22 ? 20 : 0
     
-    var effectiveness = 1;
-    if (stress > 70) effectiveness -= 0.25;
-    if (energy < 30) effectiveness -= 0.25;
-    effectiveness = max(0.25, effectiveness);
+    // --- Faktor Efektivitas ---
+    // Kondisi agen mempengaruhi seberapa baik sebuah aksi dilakukan
+    var effectiveness = 1.0
+    if stress > 70 effectiveness -= 0.3
+    if energy < 30 effectiveness -= 0.4
+    effectiveness = max(0.1, effectiveness)
     
-    switch (_action) {
+    var cost = 0
+    switch (_action){
+        // =================================================================
         case ACTIONS.Tidur:
-            var energy_gain = (time_of_day == "malam" ? 30 : 15);
-            _result.delta_energy += energy_gain;
-            _result.delta_health += 5;
-            _result.delta_stress -= 15;
-            _result.delta_hungry += 10;
-            _result.reward += (energy_gain / 2) + _urgency_energy;
-            if (energy > 95) {
-                _result.reward -= 30;
-                _result.reason = "tidak efektif, tidak lelah";
+            var energy_gain = 25
+            if time_of_day == "malam"{
+                energy_gain = 50
+                _result.reward += 15
+            } else if time_of_day == "pagi"{
+                if s_age_cat != "bayi"{
+                    _result.reward -= 60
+                    _result.reason = "Malas, tidur di pagi hari"
+                }
             }
-            break;
+            if s_energy_cat == "tinggi"{
+                _result.reward -= 50
+                _result.reason = "Tidak lelah, buang waktu"
+            }
+            _result.delta_energy += round(energy_gain * effectiveness)
+            _result.delta_stress -= 20
+            _result.delta_hungry += 10
+            _result.reward += (energy_gain / 2) + _urgency_energy
+            break
+        // =================================================================
         case ACTIONS.Makan:
-            var cost_of_food = 15;
-            if (money >= cost_of_food) {
-                _result.delta_money -= cost_of_food;
-                _result.delta_hungry -= 50;
-                _result.delta_energy += 10;
-                _result.reward += 25 + _urgency_hungry;
-                if (hungry < 30) {
-                     _result.reward -= 50;
-                     _result.reason = "kenyang, buang2x uang";
-                }
-            } else {
-                _result.reward -= 200;
-                _result.reason = "uang tidak cukup"; // REVISI: Memberikan alasan kegagalan
+            cost = 15
+            if money < cost{
+                _result.reward = -100
+                _result.reason = "Uang tidak cukup untuk makan"
+                break
             }
-            break;
+            if s_hungry_cat == "kenyang"{
+                _result.reward = -60
+                _result.reason = "Makan saat sudah kenyang"
+            }
+            _result.delta_money -= cost
+            _result.delta_hungry -= 50
+            _result.delta_energy += 10
+            _result.reward += 25 + _urgency_hungry
+            break
+        // =================================================================
         case ACTIONS.Bekerja:
-            var money_gained = round(25 * effectiveness);
-            _result.delta_money += money_gained;
-            _result.delta_energy -= 20;
-            _result.delta_stress += 5;
-            _result.delta_hungry += 15;
-            _result.reward += money_gained + _urgency_money;
-            if (effectiveness < 0.5) {
-                _result.reward -= 20;
-                _result.reason = "tidak efektif, kondisi buruk";
+            if age < 13{
+                _result.reward = -200
+                _result.reason = "Kerja di bawah umur"
+                break
             }
-            break;
+            if age > 65{
+                _result.reward = -200
+                _result.reason = "Sudah waktunya pensiun"
+                break
+            }
+            var money_gained = round((30 + (iq * 0.5)) * effectiveness)
+            _result.delta_money += money_gained
+            _result.delta_energy -= 30
+            _result.delta_stress += 15
+            _result.delta_hungry += 15
+            _result.reward += money_gained + _urgency_money
+            if effectiveness < 0.5 _result.reason = "Kerja tidak produktif"
+            break
+        // =================================================================
         case ACTIONS.Belajar:
-            var cost_of_learning = 5;
-            if (money >= cost_of_learning) {
-                _result.delta_money -= cost_of_learning;
-                _result.delta_iq += round(3 * effectiveness);
-                _result.delta_energy -= 15;
-                _result.delta_stress += 5;
-                _result.reward += 10 + _urgency_iq;
-                if (effectiveness < 0.5) {
-                    _result.reward -= 30;
-                    _result.reason = "tidak fokus, kondisi buruk";
-                }
-            } else {
-                 _result.reward -= 50;
-                 _result.reason = "uang tidak cukup"; // REVISI: Memberikan alasan kegagalan
+            if s_age_cat == "bayi"{
+                _result.reward = -120
+                _result.reason = "Terlalu muda untuk belajar formal"
+                break
             }
-            break;
+            cost = 10
+            if money < cost{
+                _result.reward = -80
+                _result.reason = "Uang tidak cukup untuk belajar"
+                break
+            }
+            _result.delta_money -= cost
+            _result.delta_iq += round(5 * effectiveness)
+            _result.delta_energy -= 15
+            _result.delta_stress += 5
+            _result.reward += 15 + _urgency_iq
+            if effectiveness < 0.5 _result.reason = "Belajar tidak fokus"
+            break
+        // =================================================================
         case ACTIONS.Bersosialisasi:
-            var cost_of_social = 10;
-            if (money >= cost_of_social) {
-                _result.delta_money -= cost_of_social;
-                _result.delta_social += round(10 * effectiveness);
-                _result.delta_stress -= 10;
-                _result.delta_energy -= 10;
-                _result.reward += 15 + _urgency_social + (_urgency_stress / 2);
-            } else {
-                _result.reward -= 70;
-                _result.reason = "uang tidak cukup"; // REVISI: Memberikan alasan kegagalan
+            if s_age_cat == "bayi"{
+                _result.reward = -120
+                _result.reason = "Terlalu muda untuk bersosialisasi kompleks"
+                break
             }
-            break;
+            cost = 20
+            if money < cost{
+                _result.reward = -60
+                _result.reason = "Butuh uang untuk jalan-jalan"
+                break
+            }
+            _result.delta_money -= cost
+            _result.delta_social += round(15 * effectiveness)
+            _result.delta_stress -= 20
+            _result.delta_energy -= 10
+            _result.reward += 20 + _urgency_social
+            break
+        // =================================================================
         case ACTIONS.Olahraga:
-            if (energy >= 30 && health >= 30) {
-                _result.delta_health += 10;
-                _result.delta_stress -= 5;
-                _result.delta_energy -= 25;
-                _result.delta_hungry += 20;
-                _result.reward += 15 + _urgency_health;
-            } else {
-                _result.reward -= 60;
-                _result.reason = "kondisi fisik terlalu lemah"; // REVISI: Memberikan alasan kegagalan
+            if s_age_cat == "bayi"{
+                _result.reward = -200
+                _result.reason = "Bayi masih mudah lelah untuk olahraga"
+                break
             }
-            break;
+            if energy < 30 || health < 30{
+                _result.reward = -100
+                _result.reason = "Kondisi fisik terlalu lemah untuk olahraga"
+                break
+            }
+            _result.delta_health += 15
+            _result.delta_energy -= 35
+            _result.delta_stress -= 10
+            _result.delta_hungry += 20
+            _result.reward += 25 + _urgency_health
+            break
+        // =================================================================
         case ACTIONS.Liburan:
-            var cost_of_holiday = 80;
-            if (money >= cost_of_holiday) {
-                if (stress > 50) {
-                    _result.delta_money -= cost_of_holiday;
-                    _result.delta_stress -= 40;
-                    _result.delta_social += 10;
-                    _result.reward += 30 + (_urgency_stress * 1.5);
-                } else {
-                    _result.reward -= 100;
-                    _result.reason = "tidak stres, buang2x uang"; // REVISI: Memberikan alasan spesifik
-                }
-            } else {
-                _result.reward -= 100;
-                _result.reason = "uang tidak cukup"; // REVISI: Memberikan alasan spesifik
+            if age < 18{
+                _result.reward = -120
+                _result.reason = "Liburan butuh pendamping"
+                break
             }
-            break;
+            cost = 150
+            if money < cost{
+                _result.reward = -200
+                _result.reason = "Uang tidak cukup untuk liburan"
+                break
+            }
+            if stress < 40{
+                _result.reward = -80
+                _result.reason = "Tidak stres, buang-buang uang"
+            }
+            _result.delta_money -= cost
+            _result.delta_stress -= 60
+            _result.delta_social += 10
+            _result.reward += 40 + _urgency_stress
+            break
+        // =================================================================
         case ACTIONS.Menikah:
-            var cost_of_marriage = 250;
-            if (money > cost_of_marriage && social > 60 && age >= 22) {
-                _result.delta_money -= cost_of_marriage;
-                _result.delta_social += 20;
-                _result.delta_stress -= 10;
-                _result.reward += 150;
-            } else {
-                _result.reward -= 300;
-                // REVISI: Memberikan alasan kegagalan yang paling relevan
-                if (money <= cost_of_marriage) _result.reason = "finansial belum siap";
-                else if (social <= 60) _result.reason = "hubungan sosial belum cukup";
-                else _result.reason = "belum cukup umur";
+            if is_married{
+                _result.reward = -500
+                _result.reason = "Sudah menikah!"
+                break
             }
-            break;
+            if age < 22{
+                _result.reward = -200
+                _result.reason = "Belum cukup dewasa untuk menikah"
+                break
+            }
+            if social < 60{
+                _result.reward = -200
+                _result.reason = "Hubungan sosial belum matang"
+                break
+            }
+            cost = 500
+            if money < cost{
+                _result.reward = -300
+                _result.reason = "Finansial belum siap untuk menikah"
+                break
+            }
+            _result.delta_money -= cost
+            _result.delta_stress -= 30
+            _result.reward += 300
+            if !_dry_run is_married = true
+            break
+        // =================================================================
         case ACTIONS.Punya_Anak:
-            var cost_of_child = 100;
-            // Asumsi: harus sudah menikah (tambahkan variabel is_married jika perlu)
-            if (money > cost_of_child && age >= 24) {
-                 _result.delta_money -= cost_of_child;
-                 _result.delta_stress += 20; // Punya anak menambah stres
-                 _result.delta_energy -= 15;
-                 _result.reward += 100; // Imbalan pencapaian hidup, tapi lebih rendah dari menikah
-            } else {
-                _reason = "uang tidak cukup";
-                _result.reward -= 250; // Penalti besar jika tidak siap
+            if !is_married{
+                _result.reward = -500
+                _result.reason = "Harus menikah terlebih dahulu"
+                break
             }
-            break;
+            if age < 25{
+                _result.reward = -300
+                _result.reason = "Belum siap secara mental/fisik"
+                break
+            }
+            cost = 300
+            if money < cost{
+                _result.reward = -250
+                _result.reason = "Finansial belum siap untuk anak"
+                break
+            }
+            _result.delta_money -= cost
+            _result.delta_stress += 30
+            _result.delta_energy -= 20
+            _result.reward += 200
+            break
+        // =================================================================
         case ACTIONS.Rawat_Jalan:
-            var cost_of_treatment = 40;
-            if (money >= cost_of_treatment) {
-                _result.delta_money -= cost_of_treatment;
-                _result.delta_health += 30;
-                _result.reward += round(20 + _urgency_health); // Sangat penting jika kesehatan kritis
-            } else {
-                _reason = "uang tidak cukup";
-                _result.reward -= 150; // Penalti jika sakit tapi tak bisa berobat
+            cost = 30
+            if money < cost{
+                _result.reward = -100
+                _result.reason = "Uang tidak cukup untuk berobat"
+                break
             }
-            if (!is_sick && health > 70) _result.reward -= 60;
-            break;
-        case ACTIONS.Bermain:
-             _result.delta_stress -= 15;
-             _result.delta_social += 5;
-             _result.delta_energy -= 10;
-             _result.reward += round(15 + (_urgency_stress / 2) + (_urgency_social / 2));
-             if (energy < 20 || hungry > 80) _result.reward -= 30;
-             break;
-        case ACTIONS.Menangis: // Hanya untuk bayi
-            if (age <= 5) {
-                // Menangis adalah cara bayi mengkomunikasikan kebutuhan paling mendesak
-                var max_urgency = max(_urgency_hungry, _urgency_energy, _urgency_health);
-                _result.reward += round(max_urgency);
-                _result.delta_energy -= 5;
-                _result.delta_social += 2;
-            } else {
-                _reason = "sudah gede, jangan nagis";
-                _result.reward -= 50; // Penalti jika sudah bukan bayi tapi masih menangis
+            if !is_sick && health > 80{
+                _result.reward = -60
+                _result.reason = "Tidak sakit, buang-buang uang"
             }
-            break;
-        case ACTIONS.Sakit:
-            // Ini adalah state, bukan aksi. Seharusnya tidak pernah dipilih.
-            // Jika terpilih, itu bug di get_valid_actions. Beri penalti agar tidak diulangi.
-            _result.reward -= 500;
-            break;
-        default:
-             _result.reason = "aksi tidak diimplementasikan dengan `reason`";
-             break;
+            _result.delta_money -= cost
+            _result.delta_health += is_sick ? 60 : 10
+            _result.reward += 30 + _urgency_health
+            break
+        // =================================================================
+        case ACTIONS.Bermain: // Aksi ringan, untuk anak & dewasa
+             if energy < 15{
+                _result.reward = -30
+                _result.reason = "Terlalu lelah untuk bermain"
+                break
+            }
+            _result.delta_stress -= 15
+            _result.delta_social += 5
+            _result.delta_energy -= 10
+            _result.reward += 15 + (_urgency_stress / 2) + (_urgency_social / 2)
+            break
+        // =================================================================
+        case ACTIONS.Menangis:
+            if s_age_cat != "bayi"{
+                _result.reward = -80
+                _result.reason = "Sudah besar, jangan cengeng"
+            }else{
+                _result.delta_social += 2
+                _result.delta_stress -= 2
+                _result.delta_energy -= 5
+                _result.reward += max(_urgency_hungry, _urgency_energy, _urgency_health, _urgency_stress)
+            }
+            break
+        // =================================================================
+        case ACTIONS.Istirahat:
+            _result.delta_energy += 10
+            _result.delta_stress -= 5
+            _result.reward += 3 + (_urgency_energy / 5)
+            break
     }
-    if (!_dry_run) {
-        iq += _result.delta_iq; money += _result.delta_money; health += _result.delta_health;
-        hungry += _result.delta_hungry; social += _result.delta_social; stress += _result.delta_stress;
-        energy += _result.delta_energy;
+    
+    if !_dry_run{
+        iq += _result.delta_iq
+        money += _result.delta_money
+        health += _result.delta_health
+        hungry += _result.delta_hungry
+        social += _result.delta_social
+        stress += _result.delta_stress
+        energy += _result.delta_energy
         
-        if (hungry > 95) { health -= 3; _result.reward -= 15; }
-        if (energy < 5) { health -= 2; _result.reward -= 15; }
-        if (stress > 95) { health -= 2; _result.reward -= 15; }
-        if (health <= 0) { _result.reward -= 1000; } // Penalti besar untuk kematian
+        if hungry > 95 health -= 5
+        if energy < 5 health -= 5
+        if stress > 95 health -= 5
+        if health <= 0 { _result.reward -= 5000 } // Penalti Kematian
         
-        health = clamp(health, 0, 100); hungry = clamp(hungry, 0, 100); energy = clamp(energy, 0, 100);
-        stress = clamp(stress, 0, 100); social = clamp(social, 0, 100); iq = clamp(iq, 0, 200); money = max(0, money);
+        health = clamp(health, 0, 100)
+        hungry = clamp(hungry, 0, 100)
+        energy = clamp(energy, 0, 100)
+        stress = clamp(stress, 0, 100)
+        social = clamp(social, 0, 100)
+        iq = clamp(iq, 0, 200)
+        money = max(0, money)
     }
-    return _result;
+    
+    return _result
 }

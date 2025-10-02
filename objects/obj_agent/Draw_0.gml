@@ -1,0 +1,7 @@
+draw_self()
+scr_status_agent()
+scr_current_action()
+scr_report_table()
+scr_q_table()
+time_calc(time_learning)
+draw_status()
